@@ -6,10 +6,11 @@ See:
  https://www.pairdomains.com/kb/posts/336
 """
 
-from ddupdate.ddplugin import ServicePlugin, ServiceError
-from ddupdate.ddplugin import http_basic_auth_setup, get_response
+import base64
+from urllib.parse import urlparse
 
-
+from ddupdate.ddplugin import ServicePlugin, ServiceError, \
+    get_response, get_netrc_auth
 
 from ddupdate.ddplugin import ServicePlugin, get_netrc_auth, get_response
 
