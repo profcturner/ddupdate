@@ -30,19 +30,23 @@ class PairDomainsPlugin(ServicePlugin):
 
     _name = 'pair_domains'
     _oneliner = 'Updates on https://dynamic.pairdomains.com'
-    _url = 'https://dynamic.pairdomains.com/nic/update'
+    _url = 'https://dynamic.pairdomains.com/nic/update?hostname={0}'
 
     def register(self, log, hostname, ip, options):
-        """Implement ServicePlugin.register."""
-        #password = get_netrc_auth(hostname)[1]
-        #data = {'password': password, 'hostname': hostname}
+        """Implement ServicePlugin.register()."""
+        url = self._url.format(hostname)
+        api_host = urlparse(url).hostname
+        username, password = get_netrc_auth(api_host)
+        user_pw = ('%s:%s' % (username, password))
+        credentials = base64.b64encode(user_pw.encode('ascii'))
+        auth_header = ('Authorization', 'Basic ' + credentials.decode("ascii"))
+        url = self._url.format(hostname)
+        if ip and ip.v4:
+            url += "&ip=" + ip.v4
         if ip and ip.v6:
-            data['myip'] = ip.v6
-        elif ip and ip.v4:
-            data['myip'] = ip.v4
-
-        # This next line reads username / password combo from .netrc and sets up auth
-        http_basic_auth_setup(self._url, hostname)
-        html = get_response(log, self._url, data=data)
+            url += "&ip6=" + ip.v6
+        html = get_response(log, url, header=auth_header)
+        key = html.split()[0]
+        if key not in ['OK', 'good', 'nochg']:
+            raise ServiceError("Bad server reply: " + html)
         log.info("Server reply: " + html)
-
